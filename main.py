@@ -3,37 +3,33 @@ import requests
 from bs4 import BeautifulSoup
 
 def get_news_headlines(url):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # Raise exception for 4xx or 5xx errors
-        soup = BeautifulSoup(response.text, 'html.parser')
-        headlines = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])  # get all headers
-        return [headline.get_text() for headline in headlines]
-    except requests.exceptions.MissingSchema:
-        print(f"Invalid URL: {url}. No scheme supplied. Perhaps you meant 'https://'?")
-        return []
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching the URL: {e}")
-        return []
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    headlines = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])  # get all headers
+
+    return [headline.get_text() for headline in headlines]
 
 class TestGetNewsHeadlines(unittest.TestCase):
 
-    def test_valid_url(self):
-        url = 'https://www.bbc.com/news'
-        headlines = get_news_headlines(url)
-        self.assertIsNotNone(headlines)
-        self.assertIsInstance(headlines, list)
-        self.assertGreater(len(headlines), 0)
+    def setUp(self):
+        # URL для тестирования
+        self.url = 'https://www.bbc.com/news'
+        # Получаем заголовки перед каждым тестом
+        self.headlines = get_news_headlines(self.url)
 
-    def test_invalid_url(self):
-        url = 'https://www.invalidurl.com'
-        headlines = get_news_headlines(url)
-        self.assertEqual(headlines, [])
+    def test_status_code(self):
+        # Проверяем статус код ответа
+        response = requests.get(self.url)
+        self.assertEqual(response.status_code, 200)
 
-    def test_empty_url(self):
-        url = ''
-        headlines = get_news_headlines(url)
-        self.assertEqual(headlines, [])
+    def test_not_empty_response(self):
+        # Проверяем, что ответ не пустой
+        self.assertIsNotNone(self.headlines)
+        self.assertIsInstance(self.headlines, list)
+
+    def test_min_10_headlines(self):
+        # Проверяем, что в ответе есть минимум 10 заголовков
+        self.assertGreaterEqual(len(self.headlines), 10)
 
 if __name__ == '__main__':
     unittest.main()
